@@ -33,21 +33,21 @@ function fabric_font_catalog(): array
     ];
 }
 
-/** Pick a single font file under $dir (prefers variable fonts). */
+/** Pick a single font file under $dir (prefers variable / axis fonts). */
 function fabric_resolve_font_file(string $dir): ?string
 {
     if (!is_dir($dir)) {
         return null;
     }
 
-    $variable = glob($dir . '/*VariableFont*.ttf') ?: [];
-    sort($variable);
-    if ($variable !== []) {
-        return $variable[0];
-    }
-
     $ttf = glob($dir . '/*.ttf') ?: [];
     sort($ttf);
+    foreach ($ttf as $path) {
+        $base = basename($path);
+        if (str_contains($base, 'VariableFont') || str_contains($base, 'wght')) {
+            return $path;
+        }
+    }
     if ($ttf !== []) {
         return $ttf[0];
     }
