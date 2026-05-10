@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fabric-app"
+version = "0.1.0"
+description = "CLI tool to generate deterministic seamless fabric tiles (SVG/PNG)"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "Hillwork, LLC." }]
+dependencies = [
+    "typer>=0.12.0",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+pillow = ["pillow>=10.0.0"]
+dev = ["pytest>=8.0", "ruff>=0.4"]
+
+[project.scripts]
+fabric-app = "fabric_app.cli:app"
+
+# Explicit src-layout mapping (see README if editable installs fail on macOS).
+[tool.setuptools]
+packages = ["fabric_app"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
