@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/fabric_fonts.php';
+
 session_start();
 
 /**
@@ -26,20 +28,19 @@ function redirect_flash_errors(array $errors, array $post): never
     exit;
 }
 
-function parse_rgb(string $spec): ?array
+/** Convert HTML `#RRGGBB` to `r,g,b` for the CLI. */
+function parse_hex_color(string $raw): ?string
 {
-    $spec = preg_replace('/\s+/', '', $spec) ?? '';
-    if (!preg_match('/^\d{1,3},\d{1,3},\d{1,3}$/', $spec)) {
+    $raw = trim($raw);
+    if (!preg_match('/^#([0-9a-fA-F]{6})$/', $raw, $m)) {
         return null;
     }
-    $parts = array_map('intval', explode(',', $spec));
-    foreach ($parts as $n) {
-        if ($n < 0 || $n > 255) {
-            return null;
-        }
-    }
+    $hex = $m[1];
+    $r = hexdec(substr($hex, 0, 2));
+    $g = hexdec(substr($hex, 2, 2));
+    $b = hexdec(substr($hex, 4, 2));
 
-    return $parts;
+    return "{$r},{$g},{$b}";
 }
 
 function validate_positive_float(string $label, string $raw): array
@@ -72,22 +73,6 @@ function validate_int_min(string $label, string $raw, int $min): array
     }
 
     return [true, $v];
-}
-
-function validate_font_family(string $raw): array
-{
-    $raw = trim($raw);
-    if ($raw === '') {
-        return [false, 'Font family is required.'];
-    }
-    if (strlen($raw) > 120) {
-        return [false, 'Font family is too long.'];
-    }
-    if (preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\\\\]/', $raw)) {
-        return [false, 'Font family contains invalid characters.'];
-    }
-
-    return [true, $raw];
 }
 
 /** Non-interactive GET: preview image or download (token-bound). */
@@ -201,23 +186,30 @@ if (!$ok5) {
     $errors[] = $cell_size;
 }
 
-foreach (
-    [
-        'Background' => trim((string) ($post['background'] ?? '')),
-        'Black ink' => trim((string) ($post['ink_black'] ?? '')),
-        'Light grey ink' => trim((string) ($post['ink_lightgrey'] ?? '')),
-        'White ink' => trim((string) ($post['ink_white'] ?? '')),
-    ] as $label => $rgbRaw
-) {
-    $parsed = parse_rgb($rgbRaw);
-    if ($parsed === null) {
-        $errors[] = "{$label} must be three comma-separated integers from 0 to 255.";
-    }
+$bgRgb = parse_hex_color((string) ($post['bg_color'] ?? ''));
+if ($bgRgb === null) {
+    $errors[] = 'Background color must be a #RRGGBB value.';
 }
 
-[$okF, $font_family] = validate_font_family((string) ($post['font_family'] ?? ''));
-if (!$okF) {
-    $errors[] = $font_family;
+$c1Rgb = parse_hex_color((string) ($post['color1'] ?? ''));
+if ($c1Rgb === null) {
+    $errors[] = 'Color 1 must be a #RRGGBB value.';
+}
+
+$c2Rgb = parse_hex_color((string) ($post['color2'] ?? ''));
+if ($c2Rgb === null) {
+    $errors[] = 'Color 2 must be a #RRGGBB value.';
+}
+
+$c3Rgb = parse_hex_color((string) ($post['color3'] ?? ''));
+if ($c3Rgb === null) {
+    $errors[] = 'Color 3 must be a #RRGGBB value.';
+}
+
+$catalog = fabric_font_catalog();
+$fontKey = trim((string) ($post['font_choice'] ?? ''));
+if (!isset($catalog[$fontKey])) {
+    $errors[] = 'Invalid font selection.';
 }
 
 [$okFs, $font_size_ratio] = validate_positive_float('Font size ratio', trim((string) ($post['font_size_ratio'] ?? '')));
@@ -233,10 +225,13 @@ if ($errors !== []) {
     redirect_flash_errors($errors, $post);
 }
 
-$background = trim((string) ($post['background'] ?? ''));
-$ink_black = trim((string) ($post['ink_black'] ?? ''));
-$ink_lightgrey = trim((string) ($post['ink_lightgrey'] ?? ''));
-$ink_white = trim((string) ($post['ink_white'] ?? ''));
+$background = $bgRgb;
+$ink_black = $c1Rgb;
+$ink_lightgrey = $c2Rgb;
+$ink_white = $c3Rgb;
+
+$fontFamily = $catalog[$fontKey]['label'];
+$fontPath = fabric_resolve_font_file($catalog[$fontKey]['dir']);
 
 if (!empty($_SESSION['fabric_png_path']) && is_string($_SESSION['fabric_png_path'])) {
     $prev = $_SESSION['fabric_png_path'];
@@ -258,7 +253,7 @@ if (!is_file($bin) || !is_executable($bin)) {
     );
 }
 
-$cmd = implode(' ', [
+$cmdParts = [
     escapeshellarg($bin),
     'render',
     '--png-out',
@@ -281,13 +276,21 @@ $cmd = implode(' ', [
     escapeshellarg($ink_lightgrey),
     '--ink-white',
     escapeshellarg($ink_white),
-    '--font-family',
-    escapeshellarg($font_family),
-    '--font-size-ratio',
-    escapeshellarg((string) $font_size_ratio),
-    '--delta-ratio',
-    escapeshellarg((string) $delta_ratio),
-]);
+];
+
+if ($fontPath !== null && $fontPath !== '' && is_readable($fontPath)) {
+    $cmdParts[] = '--font-path';
+    $cmdParts[] = escapeshellarg($fontPath);
+}
+
+$cmdParts[] = '--font-family';
+$cmdParts[] = escapeshellarg($fontFamily);
+$cmdParts[] = '--font-size-ratio';
+$cmdParts[] = escapeshellarg((string) $font_size_ratio);
+$cmdParts[] = '--delta-ratio';
+$cmdParts[] = escapeshellarg((string) $delta_ratio);
+
+$cmd = implode(' ', $cmdParts);
 
 $descriptorSpec = [
     0 => ['pipe', 'r'],

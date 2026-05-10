@@ -27,6 +27,9 @@ htmlcov/
 .vscode/
 .DS_Store
 
+# Local secrets (e.g. Cloudflare tunnel token)
+.env
+
 # Outputs (local runs)
 *.png
 *.svg

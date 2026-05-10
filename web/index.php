@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/fabric_fonts.php';
+
 session_start();
 
 $errors = $_SESSION['flash_errors'] ?? [];
@@ -78,41 +80,54 @@ $d = static function (string $key, string $default): string {
         </div>
 
         <div class="mb-4">
-            <p class="text-sm font-medium mb-2 text-gray-700">Colors (r,g,b)</p>
+            <label class="block text-sm font-medium mb-1" for="bg_color">Background</label>
+            <input class="h-11 w-full max-w-xs border border-gray-300 rounded-lg cursor-pointer bg-white"
+                   type="color" name="bg_color" id="bg_color"
+                   value="<?= $d('bg_color', '#828282') ?>">
+        </div>
+
+        <div class="mb-4">
+            <p class="text-sm font-medium mb-2 text-gray-700">Glyph colors</p>
             <div class="grid grid-cols-3 gap-3">
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1" for="background">Background</label>
-                    <input class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           type="text" name="background" id="background"
-                           value="<?= $d('background', '130,130,130') ?>">
+                    <label class="block text-xs text-gray-500 mb-1" for="color1">Color 1</label>
+                    <input class="h-11 w-full border border-gray-300 rounded-lg cursor-pointer bg-white"
+                           type="color" name="color1" id="color1"
+                           value="<?= $d('color1', '#000000') ?>">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1" for="ink_black">Black ink</label>
-                    <input class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           type="text" name="ink_black" id="ink_black"
-                           value="<?= $d('ink_black', '0,0,0') ?>">
+                    <label class="block text-xs text-gray-500 mb-1" for="color2">Color 2</label>
+                    <input class="h-11 w-full border border-gray-300 rounded-lg cursor-pointer bg-white"
+                           type="color" name="color2" id="color2"
+                           value="<?= $d('color2', '#d2d2d2') ?>">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1" for="ink_lightgrey">Light grey</label>
-                    <input class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           type="text" name="ink_lightgrey" id="ink_lightgrey"
-                           value="<?= $d('ink_lightgrey', '210,210,210') ?>">
+                    <label class="block text-xs text-gray-500 mb-1" for="color3">Color 3</label>
+                    <input class="h-11 w-full border border-gray-300 rounded-lg cursor-pointer bg-white"
+                           type="color" name="color3" id="color3"
+                           value="<?= $d('color3', '#ffffff') ?>">
                 </div>
-            </div>
-            <div class="mt-3">
-                <label class="block text-xs text-gray-500 mb-1" for="ink_white">White ink</label>
-                <input class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-xs"
-                       type="text" name="ink_white" id="ink_white"
-                       value="<?= $d('ink_white', '255,255,255') ?>">
             </div>
         </div>
 
         <div class="mb-4">
-            <label class="block text-sm font-medium mb-1" for="font_family">Font family</label>
-            <input class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                   type="text" name="font_family" id="font_family"
-                   value="<?= $d('font_family', 'Hiragino Mincho ProN') ?>"
-                   maxlength="120">
+            <label class="block text-sm font-medium mb-1" for="font_choice">Font</label>
+            <select class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    name="font_choice" id="font_choice">
+                <?php
+                $picked = trim((string) ($old['font_choice'] ?? 'noto-sans-jp'));
+                foreach (fabric_font_catalog() as $slug => $meta):
+                    $sel = $picked === $slug ? ' selected' : '';
+                    ?>
+                    <option value="<?= htmlspecialchars($slug, ENT_QUOTES, 'UTF-8') ?>"<?= $sel ?>>
+                        <?= htmlspecialchars($meta['label'], ENT_QUOTES, 'UTF-8') ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <p class="text-xs text-gray-500 mt-1">
+                Google Fonts lists the last option as <span class="font-medium">Hina Mincho</span>
+                (often confused with “Hana Mincho”).
+            </p>
         </div>
 
         <div class="grid grid-cols-2 gap-3 mb-6">

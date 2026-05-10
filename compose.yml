@@ -2,6 +2,10 @@
 #
 # Apple Silicon: keep platform: linux/amd64 — resvg is fetched as linux x86_64 (see docker/Dockerfile).
 # Pure linux/arm64 hosts need a different resvg install strategy (distro package or build from source).
+#
+# Cloudflare Tunnel (optional): copy .env.example → .env, set TUNNEL_TOKEN from Zero Trust → Networks → Tunnels.
+# Map a public hostname to http://web:80. Start with:
+#   docker compose --profile cloudflare up -d
 
 services:
   web:
@@ -13,3 +17,14 @@ services:
     ports:
       - "8084:80"
     platform: linux/amd64
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles:
+      - cloudflare
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      - web

@@ -13,8 +13,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-venv \
     ca-certificates \
     curl \
+    unzip \
     && rm -rf /var/lib/apt/lists/* \
     && fc-cache -f
+
+COPY docker/install-google-fonts.sh /tmp/install-google-fonts.sh
+RUN chmod +x /tmp/install-google-fonts.sh \
+    && /tmp/install-google-fonts.sh \
+    && rm /tmp/install-google-fonts.sh
 
 # Prebuilt CLI tarball is x86_64-only on current linebender releases — build as amd64
 # (Compose sets platform: linux/amd64 so Apple Silicon hosts still work via emulation).
