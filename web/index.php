@@ -21,6 +21,9 @@ $d = static function (string $key, string $default): string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fabric Pattern Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hina+Mincho&family=Murecho:wght@400;700&family=Noto+Sans+JP:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=Yomogi&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -112,19 +115,33 @@ $d = static function (string $key, string $default): string {
 
         <div class="mb-4">
             <label class="block text-sm font-medium mb-1" for="font_choice">Font</label>
-            <select class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    name="font_choice" id="font_choice">
-                <?php
-                $picked = trim((string) ($old['font_choice'] ?? 'noto-sans-jp'));
-                foreach (fabric_font_catalog() as $slug => $meta):
-                    $sel = $picked === $slug ? ' selected' : '';
-                    ?>
-                    <option value="<?= htmlspecialchars($slug, ENT_QUOTES, 'UTF-8') ?>"<?= $sel ?>>
-                        <?= htmlspecialchars($meta['label'], ENT_QUOTES, 'UTF-8') ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-            <p class="text-xs text-gray-500 mt-1">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+                <div class="min-w-0 flex-1">
+                    <select class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            name="font_choice" id="font_choice">
+                        <?php
+                        $picked = trim((string) ($old['font_choice'] ?? 'noto-sans-jp'));
+                        foreach (fabric_font_catalog() as $slug => $meta):
+                            $sel = $picked === $slug ? ' selected' : '';
+                            ?>
+                            <option value="<?= htmlspecialchars($slug, ENT_QUOTES, 'UTF-8') ?>"<?= $sel ?>>
+                                <?= htmlspecialchars($meta['label'], ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="flex shrink-0 flex-col sm:max-w-[11rem]">
+                    <span class="mb-1 text-xs font-medium text-gray-600">Glyph preview (西 · 川)</span>
+                    <div id="fabric-glyph-preview"
+                         lang="ja"
+                         class="flex flex-1 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-center text-3xl leading-tight text-gray-900">
+                        西<span class="mx-1 text-gray-300" aria-hidden="true">·</span>川
+                    </div>
+                    <p class="mt-1 text-center text-[10px] text-gray-400">Pattern uses 西 (nishi) and 川 (kawa)</p>
+                </div>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">
+                Preview loads faces from Google Fonts in the browser; the PNG uses fonts installed on the server.
                 Google Fonts lists the last option as <span class="font-medium">Hina Mincho</span>
                 (often confused with “Hana Mincho”).
             </p>
@@ -152,6 +169,27 @@ $d = static function (string $key, string $default): string {
     </form>
 
 </div>
+
+<script>
+(function () {
+    var sel = document.getElementById('font_choice');
+    var box = document.getElementById('fabric-glyph-preview');
+    if (!sel || !box) return;
+
+    function cssEscapeFamily(name) {
+        return String(name).trim().replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    function syncGlyphPreviewFont() {
+        var opt = sel.options[sel.selectedIndex];
+        var name = opt ? opt.text.trim() : '';
+        box.style.fontFamily = "'" + cssEscapeFamily(name) + "', serif";
+    }
+
+    sel.addEventListener('change', syncGlyphPreviewFont);
+    syncGlyphPreviewFont();
+})();
+</script>
 
 </body>
 </html>
