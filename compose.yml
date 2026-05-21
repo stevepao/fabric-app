@@ -1,4 +1,4 @@
-# Local smoke test: open http://localhost:8084/
+# Modified to assume nginx proxy at the proxy-tier; optional CloudFlare tunnel
 #
 # Apple Silicon: keep platform: linux/amd64 — resvg is fetched as linux x86_64 (see docker/Dockerfile).
 # Pure linux/arm64 hosts need a different resvg install strategy (distro package or build from source).
@@ -14,9 +14,10 @@ services:
       dockerfile: docker/Dockerfile
       args:
         RESVG_VERSION: v0.47.0
-    ports:
-      - "8084:80"
     platform: linux/amd64
+    networks:
+      - proxy-tier
+      - default
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -26,5 +27,12 @@ services:
     command: tunnel run
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    networks:
+      - default
     depends_on:
       - web
+
+networks:
+  proxy-tier:
+    external: true
+
