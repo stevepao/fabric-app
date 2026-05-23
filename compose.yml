@@ -18,6 +18,9 @@ services:
     ports:
       - "8084:80"
     platform: linux/amd64
+    networks:
+      - default
+      - proxy-tier
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -28,3 +31,9 @@ services:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
     depends_on:
       - web
+    networks:
+      - default
+
+networks:
+  proxy-tier:
+    external: true
